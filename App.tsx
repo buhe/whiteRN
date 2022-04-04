@@ -8,7 +8,7 @@
  * @format
  */
 
-import React from 'react';
+import React, {Component} from 'react';
 import {WebView} from 'react-native-webview';
 // import {
 //   SafeAreaView,
@@ -56,17 +56,28 @@ import {WebView} from 'react-native-webview';
 //   );
 // };
 
-const App = () => {
+export default class App extends Component {
+  webref: WebView<{}> | undefined;
   // const isDarkMode = useColorScheme() === 'dark';
 
   // const backgroundStyle = {
   //   backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   // };
-
-  return (
-    <WebView source={{uri: 'https://infinite.red'}} style={{marginTop: 20}} />
-  );
-};
+  // let webref: WebView | undefined;
+  render() {
+    setTimeout(() => {
+      this.webref!.postMessage('msg');
+    }, 20000);
+    return (
+      <WebView
+        source={{uri: 'http://192.168.31.105:8080'}}
+        originWhitelist={['*']}
+        style={{marginTop: 20}}
+        ref={(r: WebView) => (this.webref = r)}
+      />
+    );
+  }
+}
 
 // const styles = StyleSheet.create({
 //   sectionContainer: {
@@ -87,4 +98,4 @@ const App = () => {
 //   },
 // });
 
-export default App;
+// export default App;
