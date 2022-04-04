@@ -66,13 +66,16 @@ export default class App extends Component {
   // let webref: WebView | undefined;
   render() {
     setTimeout(() => {
-      this.webref!.postMessage('msg');
+      this.webref!.postMessage('m-s');
     }, 20000);
     return (
       <WebView
         source={{uri: 'http://192.168.31.105:8080'}}
         originWhitelist={['*']}
         style={{marginTop: 20}}
+        onMessage={event => {
+          alert(event.nativeEvent.data); // eslint-disable-line no-alert
+        }}
         ref={(r: WebView) => (this.webref = r)}
       />
     );
