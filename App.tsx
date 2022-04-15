@@ -10,6 +10,7 @@
 
 import React, {Component} from 'react';
 import {WebView} from 'react-native-webview';
+import bridge from './react-native-bridge-out';
 // import {
 //   SafeAreaView,
 //   ScrollView,
@@ -66,8 +67,10 @@ export default class App extends Component {
   // let webref: WebView | undefined;
   render() {
     setTimeout(() => {
-      this.webref!.postMessage('m-s');
-    }, 20000);
+      // this.webref!.postMessage('m-s');
+      bridge.call('hello', '');
+      console.log('call hi');
+    }, 2000);
     return (
       <WebView
         source={{uri: 'http://192.168.31.105:8080'}}
@@ -76,7 +79,10 @@ export default class App extends Component {
         onMessage={event => {
           alert(event.nativeEvent.data); // eslint-disable-line no-alert
         }}
-        ref={(r: WebView) => (this.webref = r)}
+        ref={(r: WebView) => {
+          this.webref = r;
+          bridge.init(r);
+        }}
       />
     );
   }
