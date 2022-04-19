@@ -67,11 +67,12 @@ export default class App extends Component {
   // };
   // let webref: WebView | undefined;
   render() {
-    setTimeout(() => {
+    setTimeout(async () => {
       // this.webref!.postMessage('m-s');
       // bridge.call('hello', '');
       // console.log('call hi');
-      hello();
+      let ret = await hello();
+      console.log(ret);
     }, 2000);
     return (
       <WebView
@@ -85,6 +86,9 @@ export default class App extends Component {
         ref={(r: WebView) => {
           this.webref = r;
           bridge.init(r);
+          bridge.register('hello_evt', () => {
+            console.log('call evt...');
+          });
         }}
       />
     );

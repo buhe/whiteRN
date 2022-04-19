@@ -1,9 +1,9 @@
 import WebView from 'react-native-webview';
-import {v1 as uuid} from 'uuid';
+import uuid from 'react-native-uuid';
 class Bridge {
   webview: WebView | undefined = undefined;
   methods: Map<string, any> = new Map();
-  queue: Map<string, any> = new Map();
+  queue: Map<string | number[], any> = new Map();
 
   public init(webview: WebView) {
     this.webview = webview;
@@ -15,6 +15,14 @@ class Bridge {
     this.webview!.postMessage(potocol);
     return actionId;
   }
+  public callAsync(method: string, args: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const actionId = uuid.v4();
+      const potocol = 'req|' + actionId + '|0|' + method + '|' + args;
+      this.queue.set(actionId, {ack: false, resolve: resolve, reject: reject});
+      this.webview!.postMessage(potocol);
+    });
+  }
   public register(name: string, fun: any) {
     this.methods.set(name, fun);
   }
@@ -25,6 +33,7 @@ class Bridge {
   }
   public getRet(actionId: string) {
     const ack = this.queue.get(actionId);
+    this.queue.delete(actionId);
     return ack.ret;
   }
   public recv(potocol: string) {
@@ -33,8 +42,8 @@ class Bridge {
       let type = dser[0];
       let action = dser[1];
       // let object = dser[2];
-      let method = dser[3];
-      let args = dser[4];
+      let methodOrRet = dser[3];
+      let argsOrErr = dser[4];
       // alert(type + action);
       switch (type) {
         case 'ack':
@@ -42,16 +51,33 @@ class Bridge {
             const q = this.queue.get(action);
             // alert(JSON.stringify(q));
             q.ack = true;
-            q.ret = method;
-            this.queue.set(action, q);
+            if (q.resolve) {
+              if (argsOrErr) {
+                q.reject(argsOrErr);
+              } else {
+                q.resolve(methodOrRet);
+              }
+              this.queue.delete(action);
+            } else {
+              q.ret = methodOrRet;
+              this.queue.set(action, q);
+            }
           }
           break;
         case 'evt':
+          if (this.methods.has(methodOrRet)) {
+            let fun = this.methods.get(methodOrRet);
+            try {
+              const ret = fun.apply(argsOrErr);
+              const potocolForAck = 'ack|' + action + '|0|' + ret;
+              this.webview!.postMessage(potocolForAck);
+            } catch (e) {
+              const potocolForAck =
+                'ack|' + action + '|0|undefined|' + JSON.stringify(e);
+              this.webview!.postMessage(potocolForAck);
+            }
+          }
           break;
-      }
-      if (this.methods.has(method)) {
-        let fun = this.methods.get(method);
-        fun.apply(args);
       }
     }
   }
